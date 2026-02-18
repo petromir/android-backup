@@ -35,7 +35,7 @@ chmod +x android-backup.sh
 ### List connected devices
 
 ```bash
-./android-backup.sh --list-devices
+./android-backup.sh devices
 ```
 
 Example output:
@@ -48,7 +48,7 @@ Connected devices:
 ### Dry run (preview backup)
 
 ```bash
-./android-backup.sh --backup-folders "/sdcard/DCIM" --output-folder ./backup --dry-run
+./android-backup.sh backup --folders "/sdcard/DCIM" --output ./backup --dry-run
 ```
 
 Example output:
@@ -74,7 +74,7 @@ Summary: 2 files, 7.70 MB
 ### Backup specific folders
 
 ```bash
-./android-backup.sh --backup-folders "/sdcard/DCIM,/sdcard/Download" --output-folder ./backup
+./android-backup.sh backup --folders "/sdcard/DCIM,/sdcard/Download" --output ./backup
 ```
 
 Example output:
@@ -89,10 +89,10 @@ Starting backup to: ./backup_2026-02-18_130044
 Backup completed: ./backup_2026-02-18_130044
 ```
 
-### Backup with password-protected archive
+### Backup with archive
 
 ```bash
-./android-backup.sh --backup-folders "/sdcard/DCIM" --output-folder ./backup --enable-archiving --archiving-password "mypassword"
+./android-backup.sh backup --folders "/sdcard/DCIM" --output ./backup --archive
 ```
 
 Example output:
@@ -102,8 +102,30 @@ Starting backup to: ./backup_2026-02-18_130044
 [1/1] Copying /sdcard/DCIM...
 /sdcard/DCIM/: 15 files pulled, 0 skipped.
 
-Creating encrypted archive...
-Backup completed: ./backup_2026-02-18_130044.zip
+Backup completed: ./backup_2026-02-18_130044
+Creating archive: ./backup_2026-02-18_130044.zip...
+Archive created successfully.
+Uncompressed backup folder removed.
+```
+
+### Backup with password-protected archive
+
+```bash
+./android-backup.sh backup --folders "/sdcard/DCIM" --output ./backup --archive --password "mypassword"
+```
+
+Example output:
+```
+Starting backup to: ./backup_2026-02-18_130044
+
+[1/1] Copying /sdcard/DCIM...
+/sdcard/DCIM/: 15 files pulled, 0 skipped.
+
+Backup completed: ./backup_2026-02-18_130044
+Creating archive: ./backup_2026-02-18_130044.zip...
+Using password protection for archive.
+Archive created successfully.
+Uncompressed backup folder removed.
 ```
 
 ### Show help
@@ -114,22 +136,26 @@ Backup completed: ./backup_2026-02-18_130044.zip
 
 Example output:
 ```
-Usage: android-backup.sh [OPTIONS]
+Usage: android-backup.sh COMMAND [OPTIONS]
 
-Options:
-  --backup-folders <paths>       Comma-separated list of folders to backup
-  --output-folder <path>         Output folder for backup (required for backup)
+Commands:
+  devices                        List connected Android devices
+  backup [OPTIONS]               Backup folders from the connected device
+
+Backup Options:
+  --folders <paths>              Comma-separated list of folders to backup (required)
+  --output <path>                Output folder for backup (required)
   --dry-run                      Show what would be backed up without copying
-  --enable-archiving             Create a zip archive of the backup
-  --archiving-password <pass>    Set password for the archive
-  --list-devices                 List connected Android devices
-  --help                         Display this help message
+  --archive                      Create a zip archive of the backup
+  --password <pass>              Set password for the archive
+
+Global Options:
+  --help, -h                     Display this help message
 
 Examples:
-  android-backup.sh --list-devices
-  android-backup.sh --backup-folders "/sdcard/DCIM,/sdcard/Download" --output-folder ./backup --dry-run
-  android-backup.sh --backup-folders "/sdcard/DCIM" --output-folder ./backup
-  android-backup.sh --backup-folders "/sdcard/DCIM" --output-folder ./backup --enable-archiving --archiving-password "secret"
+  android-backup.sh devices
+  android-backup.sh backup --folders "/sdcard/DCIM" --output ./backup --dry-run
+  android-backup.sh backup --folders "/sdcard/DCIM,/sdcard/Download" --output ./backup --archive
 ```
 
 ## License

@@ -22,22 +22,26 @@ print_error() {
 
 print_usage() {
     cat <<EOF
-Usage: ${SCRIPT_NAME} [OPTIONS]
+Usage: ${SCRIPT_NAME} COMMAND [OPTIONS]
 
-Options:
-  --backup-folders <paths>       Comma-separated list of folders to backup
-  --output-folder <path>         Output folder for backup (required for backup)
+Commands:
+  devices                        List connected Android devices
+  backup [OPTIONS]               Backup folders from the connected device
+
+Backup Options:
+  --folders <paths>              Comma-separated list of folders to backup (required)
+  --output <path>                Output folder for backup (required)
   --dry-run                      Show what would be backed up without copying
-  --enable-archiving             Create a zip archive of the backup
-  --archiving-password <pass>    Set password for the archive
-  --list-devices                 List connected Android devices
-  --help                         Display this help message
+  --archive                      Create a zip archive of the backup
+  --password <pass>              Set password for the archive
+
+Global Options:
+  --help, -h                     Display this help message
 
 Examples:
-  ${SCRIPT_NAME} --list-devices
-  ${SCRIPT_NAME} --backup-folders "/sdcard/DCIM,/sdcard/Download" --output-folder ./backup --dry-run
-  ${SCRIPT_NAME} --backup-folders "/sdcard/DCIM" --output-folder ./backup
-  ${SCRIPT_NAME} --backup-folders "/sdcard/DCIM" --output-folder ./backup --enable-archiving --archiving-password "secret"
+  ${SCRIPT_NAME} devices
+  ${SCRIPT_NAME} backup --folders "/sdcard/DCIM" --output ./backup --dry-run
+  ${SCRIPT_NAME} backup --folders "/sdcard/DCIM,/sdcard/Download" --output ./backup --archive
 EOF
 }
 
@@ -77,12 +81,12 @@ format_size() {
 
 validate_backup_params() {
     if [[ -z "$BACKUP_FOLDERS" ]]; then
-        print_error "--backup-folders is required."
+        print_error "--folders is required."
         exit 1
     fi
     
     if [[ -z "$OUTPUT_FOLDER" ]]; then
-        print_error "--output-folder is required."
+        print_error "--output is required."
         exit 1
     fi
 }
@@ -202,6 +206,38 @@ backup_folders() {
     
     echo ""
     echo "Backup completed: ${output_dir}"
+
+    if [[ "$ENABLE_ARCHIVING" == true ]]; then
+        if ! command -v zip &>/dev/null; then
+            print_error "'zip' is not installed. Skipping archive creation."
+            return 0
+        fi
+
+        local archive_name="${output_dir}.zip"
+        echo "Creating archive: ${archive_name}..."
+        
+        # Change to the parent directory of output_dir to have cleaner paths in zip
+        local parent_dir
+        parent_dir=$(dirname "$output_dir")
+        local base_dir
+        base_dir=$(basename "$output_dir")
+        
+        local zip_cmd=("zip" "-r")
+        if [[ -n "$ARCHIVING_PASSWORD" ]]; then
+            zip_cmd+=("-P" "$ARCHIVING_PASSWORD")
+            echo "Using password protection for archive."
+        fi
+        zip_cmd+=("${base_dir}.zip" "$base_dir")
+
+        if (cd "$parent_dir" && "${zip_cmd[@]}" > /dev/null); then
+            echo "Archive created successfully."
+            # Optionally remove the uncompressed folder
+            rm -rf "$output_dir"
+            echo "Uncompressed backup folder removed."
+        else
+            print_error "Failed to create archive."
+        fi
+    fi
 }
 
 list_devices() {
@@ -241,69 +277,68 @@ main() {
         exit 0
     fi
 
-    local action=""
+    local command="$1"
+    shift
 
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            --list-devices)
-                action="list-devices"
-                shift
-                ;;
-            --backup-folders)
-                if [[ -z "${2:-}" || "$2" == --* ]]; then
-                    print_error "--backup-folders requires a value."
-                    exit 1
-                fi
-                BACKUP_FOLDERS="$2"
-                action="backup"
-                shift 2
-                ;;
-            --output-folder)
-                if [[ -z "${2:-}" || "$2" == --* ]]; then
-                    print_error "--output-folder requires a value."
-                    exit 1
-                fi
-                OUTPUT_FOLDER="$2"
-                shift 2
-                ;;
-            --dry-run)
-                DRY_RUN=true
-                shift
-                ;;
-            --enable-archiving)
-                ENABLE_ARCHIVING=true
-                shift
-                ;;
-            --archiving-password)
-                if [[ -z "${2:-}" || "$2" == --* ]]; then
-                    print_error "--archiving-password requires a value."
-                    exit 1
-                fi
-                ARCHIVING_PASSWORD="$2"
-                shift 2
-                ;;
-            --help)
-                print_usage
-                exit 0
-                ;;
-            *)
-                print_error "Unknown option: $1"
-                print_usage
-                exit 1
-                ;;
-        esac
-    done
-
-    # Execute the requested action
-    case "$action" in
-        list-devices)
+    case "$command" in
+        devices)
             list_devices
             ;;
         backup)
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    --folders)
+                        if [[ -z "${2:-}" || "$2" == --* ]]; then
+                            print_error "--folders requires a value."
+                            exit 1
+                        fi
+                        BACKUP_FOLDERS="$2"
+                        shift 2
+                        ;;
+                    --output)
+                        if [[ -z "${2:-}" || "$2" == --* ]]; then
+                            print_error "--output requires a value."
+                            exit 1
+                        fi
+                        OUTPUT_FOLDER="$2"
+                        shift 2
+                        ;;
+                    --dry-run)
+                        DRY_RUN=true
+                        shift
+                        ;;
+                    --archive)
+                        ENABLE_ARCHIVING=true
+                        shift
+                        ;;
+                    --password)
+                        if [[ -z "${2:-}" || "$2" == --* ]]; then
+                            print_error "--password requires a value."
+                            exit 1
+                        fi
+                        ARCHIVING_PASSWORD="$2"
+                        shift 2
+                        ;;
+                    --help|-h)
+                        print_usage
+                        exit 0
+                        ;;
+                    *)
+                        print_error "Unknown backup option: $1"
+                        print_usage
+                        exit 1
+                        ;;
+                esac
+            done
             backup_folders
             ;;
-        "")
-            print_error "No action specified. Use --list-devices or --backup-folders."
+        --help|-h|help)
+            print_usage
+            exit 0
+            ;;
+        *)
+            print_error "Unknown command: $command"
+            print_usage
             exit 1
             ;;
     esac
