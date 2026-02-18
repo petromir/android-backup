@@ -1,0 +1,11 @@
+{
+  "context": {
+    "discoveryMaxDirs": 100,
+    "includeDirectories": [
+      "."
+    ]
+  },
+  "model": {
+    "compressionThreshold": 2000
+  }
+}
