@@ -8,29 +8,50 @@ This file provides guidance to AI assistances when working with code in this rep
 
 - License: MIT
 - Language: Bash (strictly)
+- Target OS: macOS/Linux (Bash environments)
 
 ## Features
 
-- Copy folders from connected Android devices
+- Recursive folder copy from connected Android devices.
 - Optional archive creation with password protection
+- Export to Google Drive (using rclone)
 - View connected devices
+- Dry-run capability.
 
-## CLI Parameters
+## Command Structure
+
+The utility uses a subcommand-based interface:
+
+- `devices`: List currently connected Android devices.
+- `backup [options]`: Perform a backup from the connected device.
+
+## Backup Parameters
 
 | Parameter | Description |
 |-----------|-------------|
-| `--backup-folders` | Comma-separated list of folders to backup from device |
-| `--output-folder` | Output folder for backup (timestamp appended automatically) |
+| `--folders <paths>` | Comma-separated list of folders to backup from device (required) |
+| `--output <path>` | Output folder for backup (timestamp appended automatically) (required) |
 | `--dry-run` | Show what would be backed up without copying |
-| `--enable-archiving` | Enable zip archive creation |
-| `--archiving-password` | Password for the archive (requires `--enable-archiving`) |
-| `--list-devices` | List currently connected Android devices |
-| `--help` | Show usage information |
+| `--archive` | Enable zip archive creation |
+| `--password <pass>` | Password for the archive (requires `--archive`) |
+| `--help, -h` | Show usage information |
+
+## Google Drive Export Utility
+
+The `export-gdrive.sh` script is a standalone utility to upload files to Google Drive.
+
+Usage: `./export-gdrive.sh <zip_file> <gdrive_folder>`
+
+| Argument | Description |
+|----------|-------------|
+| `zip_file` | Path to the local ZIP file to upload |
+| `gdrive_folder` | The destination folder in Google Drive |
 
 ## Dependencies
 
 - `adb` (Android Debug Bridge)
 - `zip` (for archiving with password)
+- `rclone` (optional, for Google Drive export)
 
 ## Bash Scripting Guidelines
 

@@ -11,6 +11,7 @@ OUTPUT_FOLDER=""
 DRY_RUN=false
 ENABLE_ARCHIVING=false
 ARCHIVING_PASSWORD=""
+PROMPT_PASSWORD=false
 
 # ------------------------------------------------------------------------------
 # Helper functions
@@ -33,7 +34,7 @@ Backup Options:
   --output <path>                Output folder for backup (required)
   --dry-run                      Show what would be backed up without copying
   --archive                      Create a zip archive of the backup
-  --password <pass>              Set password for the archive
+  --password                     Prompt for archive password
 
 Global Options:
   --help, -h                     Display this help message
@@ -102,9 +103,9 @@ list_folder_contents() {
     
     echo ""
     echo "Folder: ${folder}"
-    echo "$(printf '=%.0s' {1..60})"
+    printf -- '=%.0s' {1..60}; echo
     printf -- "%-40s %10s %s\n" "File" "Size" "Modified"
-    echo "$(printf '-%.0s' {1..60})"
+    printf -- '-%.0s' {1..60}; echo
     
     # Get file listing from device
     local ls_output
@@ -143,7 +144,7 @@ list_folder_contents() {
         fi
     done <<< "$ls_output"
     
-    echo "$(printf '-%.0s' {1..60})"
+    printf -- '-%.0s' {1..60}; echo
     echo "Summary: ${file_count} files, $(format_size $total_size)"
 }
 
@@ -152,6 +153,11 @@ backup_folders() {
     check_device_connected
     validate_backup_params
     
+    if [[ "$PROMPT_PASSWORD" == true && "$DRY_RUN" == false ]]; then
+        read -rs -p "Enter password for archive: " ARCHIVING_PASSWORD
+        echo ""
+    fi
+
     local output_dir="${OUTPUT_FOLDER}_${TIMESTAMP}"
     
     # Convert comma-separated list to array
@@ -312,12 +318,9 @@ main() {
                         shift
                         ;;
                     --password)
-                        if [[ -z "${2:-}" || "$2" == --* ]]; then
-                            print_error "--password requires a value."
-                            exit 1
-                        fi
-                        ARCHIVING_PASSWORD="$2"
-                        shift 2
+                        ENABLE_ARCHIVING=true
+                        PROMPT_PASSWORD=true
+                        shift
                         ;;
                     --help|-h)
                         print_usage

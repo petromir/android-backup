@@ -3,9 +3,21 @@
     "discoveryMaxDirs": 100,
     "includeDirectories": [
       "."
-    ]
+    ],
+    "fileName": "AGENTS.md"
   },
   "model": {
     "compressionThreshold": 2000
+  },
+  "ide": {
+    "enabled": true
+  },
+  "tools": {
+    "shell": {
+      "showColor": true
+    }
+  },
+  "experimental": {
+    "plan": true
   }
 }

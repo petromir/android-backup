@@ -16,6 +16,11 @@ brew install android-platform-tools
 brew install zip
 ```
 
+```bash
+# Optional: Install rclone for Google Drive export
+brew install rclone
+```
+
 ### Device Setup
 
 1. Enable USB debugging on your Android device (Settings > Developer Options > USB Debugging)
@@ -126,6 +131,20 @@ Creating archive: ./backup_2026-02-18_130044.zip...
 Using password protection for archive.
 Archive created successfully.
 Uncompressed backup folder removed.
+```
+
+### Export to Google Drive
+
+Use the `export-gdrive.sh` script to upload a backup archive to Google Drive. This script requires `rclone` to be configured with a remote named `gdrive`.
+
+```bash
+./export-gdrive.sh ./backup_2026-02-18_130044.zip "AndroidBackups"
+```
+
+Example output:
+```
+Uploading ./backup_2026-02-18_130044.zip to Google Drive folder: AndroidBackups...
+Upload completed successfully.
 ```
 
 ### Show help
