@@ -1,0 +1,9 @@
+# Ignore IDE and internal files
+.idea/
+.git/
+.gemini/
+
+# Ignore backups and temporary files
+*.zip
+*.bak
+tmp/
