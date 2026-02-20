@@ -1,6 +1,6 @@
-# android-backup
+# android-data-backup
 
-A bash-based backup utility for Android devices using ADB.
+A bash-based backup utilities for Android devices using ADB. In essence it copies and zips (optionally with a password) specified folders, along with an option to export files to Google Drive.
 
 ## Prerequisites
 
@@ -135,7 +135,7 @@ Uncompressed backup folder removed.
 
 ### Export to Google Drive
 
-Use the `export-gdrive.sh` script to upload a backup archive to Google Drive. This script requires `rclone` to be configured with a remote named `gdrive`.
+Use the `export-gdrive.sh` script to upload a backup archive to Google Drive. This script requires `rclone` to be configured (see [here](https://rclone.org/drive/#making-your-own-client-id) and [here](https://rclone.org/drive/)) with a remote named `gdrive`.
 
 ```bash
 ./export-gdrive.sh ./backup_2026-02-18_130044.zip "AndroidBackups"
@@ -179,4 +179,4 @@ Examples:
 
 ## License
 
-MIT
+[MIT](LICENSE)
