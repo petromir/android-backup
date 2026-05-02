@@ -14,7 +14,7 @@ This file provides guidance to AI assistances when working with code in this rep
 
 - Recursive folder copy from connected Android devices.
 - Optional archive creation with password protection
-- Export to Google Drive (using rclone)
+- Export to Google Drive (using gws)
 - View connected devices
 - Dry-run capability.
 
@@ -40,18 +40,18 @@ The utility uses a subcommand-based interface:
 
 The `export-gdrive.sh` script is a standalone utility to upload files to Google Drive.
 
-Usage: `./export-gdrive.sh <zip_file> <gdrive_folder>`
+Usage: `./export-gdrive.sh <zip_file> <gdrive_folder_id>`
 
 | Argument | Description |
 |----------|-------------|
 | `zip_file` | Path to the local ZIP file to upload |
-| `gdrive_folder` | The destination folder in Google Drive |
+| `gdrive_folder_id` | The destination Google Drive folder ID |
 
 ## Dependencies
 
 - `adb` (Android Debug Bridge)
 - `zip` (for archiving with password)
-- `rclone` (optional, for Google Drive export)
+- `gws` (optional, for Google Drive export)
 
 ## Bash Scripting Guidelines
 

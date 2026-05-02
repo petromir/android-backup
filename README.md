@@ -1,6 +1,6 @@
 # android-data-backup
 
-A bash-based backup utilities for Android devices using ADB. In essence it copies and zips (optionally with a password) specified folders, along with an option to export files to Google Drive.
+A bash-based backup utility for Android devices using ADB. In essence, it copies and zips (optionally with a password) specified folders, along with an option to export files to Google Drive.
 
 ## Prerequisites
 
@@ -17,8 +17,8 @@ brew install zip
 ```
 
 ```bash
-# Optional: Install rclone for Google Drive export
-brew install rclone
+# Optional: Install gws (Google Workspace CLI) for Google Drive export
+brew install googleworkspace-cli
 ```
 
 ### Device Setup
@@ -135,15 +135,30 @@ Uncompressed backup folder removed.
 
 ### Export to Google Drive
 
-Use the `export-gdrive.sh` script to upload a backup archive to Google Drive. This script requires `rclone` to be configured (see [here](https://rclone.org/drive/#making-your-own-client-id) and [here](https://rclone.org/drive/)) with a remote named `gdrive`.
+Use the `export-gdrive.sh` script to upload a backup archive to Google Drive. This script requires `gws` (Google Workspace CLI) to be installed and authenticated.
 
+**1. Install `gws`:**
 ```bash
-./export-gdrive.sh ./backup_2026-02-18_130044.zip "AndroidBackups"
+brew install googleworkspace-cli
+# or: npm install -g @googleworkspace/cli
 ```
+
+**2. Authenticate:**
+```bash
+gws auth setup   # one-time setup
+gws auth login   # log in to Google
+```
+
+**3. Upload:**
+```bash
+./export-gdrive.sh ./backup_2026-02-18_130044.zip "YOUR_FOLDER_ID"
+```
+
+> **Note:** The second argument must be a Google Drive **folder ID**, not a folder name. To find it, open the folder in Google Drive web UI and copy the ID from the URL (`https://drive.google.com/drive/folders/FOLDER_ID`).
 
 Example output:
 ```
-Uploading ./backup_2026-02-18_130044.zip to Google Drive folder: AndroidBackups...
+Uploading ./backup_2026-02-18_130044.zip to Google Drive folder ID: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms...
 Upload completed successfully.
 ```
 

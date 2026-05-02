@@ -1,66 +1,83 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -o errexit
+set -o nounset
+set -o pipefail
 
 # ------------------------------------------------------------------------------
 # Export to Google Drive utility for android-backup
+# Uses gws (Google Workspace CLI).
 # ------------------------------------------------------------------------------
 
-SCRIPT_NAME="$(basename "$0")"
+finish() {
+    local result=${?}
+    exit ${result}
+}
+trap finish EXIT ERR
+
+SCRIPT_NAME="$(basename "${0}")"
 
 print_error() {
-    echo "Error: $1" >&2
+    printf "Error: %s\n" "${1}" >&2
 }
 
 print_usage() {
     cat <<EOF
-Usage: ${SCRIPT_NAME} <zip_file> <gdrive_folder>
+Usage: ${SCRIPT_NAME} <zip_file> <gdrive_folder_id>
 
 Arguments:
   zip_file          Path to the local ZIP file to upload
-  gdrive_folder     The destination folder in Google Drive (e.g., "Backups/Android")
+  gdrive_folder_id  The destination Google Drive folder ID
 
 Prerequisites:
-  This script uses 'rclone' to upload files. You must have rclone installed 
-  and configured with a remote named 'gdrive'.
-  
-  Install rclone:
-    macOS: brew install rclone
-  
-  Configure rclone:
-    rclone config (follow prompts to create a 'gdrive' remote)
+  This script uses 'gws' (Google Workspace CLI) to upload files.
+  You must have gws installed and authenticated.
+
+  Install gws:
+    macOS: brew install googleworkspace-cli
+    Or:   npm install -g @googleworkspace/cli
+
+  Authenticate gws:
+    gws auth setup   # one-time setup
+    gws auth login   # log in to Google
+
+  Find a folder ID:
+    Open the target folder in Google Drive web UI.
+    The URL will look like: https://drive.google.com/drive/folders/FOLDER_ID
 EOF
 }
 
-if [[ $# -lt 2 ]]; then
+if [[ ${#} -lt 2 ]]; then
     print_usage
     exit 1
 fi
 
-ZIP_FILE="$1"
-GDRIVE_FOLDER="$2"
+ZIP_FILE="${1}"
+GDRIVE_FOLDER="${2}"
 
-if [[ ! -f "$ZIP_FILE" ]]; then
+if [[ ! -f "${ZIP_FILE}" ]]; then
     print_error "ZIP file not found: ${ZIP_FILE}"
     exit 1
 fi
 
-if ! command -v rclone &>/dev/null; then
-    print_error "'rclone' is not installed. Please install it to use Google Drive export."
-    echo "  macOS: brew install rclone" >&2
+if ! command -v gws &>/dev/null; then
+    print_error "'gws' is not installed. Please install it to use Google Drive export."
+    printf "  macOS: brew install googleworkspace-cli\n" >&2
+    printf "  Or:   npm install -g @googleworkspace/cli\n" >&2
     exit 1
 fi
 
-# Check if 'gdrive' remote is configured
-if ! rclone listremotes | grep -q "^gdrive:$"; then
-    print_error "rclone remote 'gdrive' is not configured."
-    echo "  Run 'rclone config' to create a remote named 'gdrive'." >&2
+# Verify gws authentication with a lightweight Drive API call
+if ! gws drive about get --params '{"fields": "user"}' &>/dev/null; then
+    print_error "gws authentication failed or Google Drive API is not accessible."
+    printf "  Please run: gws auth setup   # one-time setup\n" >&2
+    printf "  Then run:   gws auth login   # log in to Google\n" >&2
     exit 1
 fi
 
-echo "Uploading ${ZIP_FILE} to Google Drive folder: ${GDRIVE_FOLDER}..."
+printf "Uploading %s to Google Drive folder ID: %s...\n" "${ZIP_FILE}" "${GDRIVE_FOLDER}"
 
-if rclone copy "$ZIP_FILE" "gdrive:${GDRIVE_FOLDER}" --progress; then
-    echo "Upload completed successfully."
+if gws drive +upload "${ZIP_FILE}" --parent "${GDRIVE_FOLDER}"; then
+    printf "Upload completed successfully.\n"
 else
     print_error "Failed to upload to Google Drive."
     exit 1

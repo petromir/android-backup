@@ -1,71 +1,81 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -o errexit
+set -o nounset
+set -o pipefail
 
+# ------------------------------------------------------------------------------
 # Test script for android-backup.sh subcommand refactoring
+# ------------------------------------------------------------------------------
+
+finish() {
+    local result=${?}
+    exit ${result}
+}
+trap finish EXIT ERR
 
 SCRIPT="./android-backup.sh"
 
-echo "Running tests for android-backup.sh subcommands..."
+printf "Running tests for android-backup.sh subcommands...\n"
 
 # 1. Test help output
-echo "Test 1: Help output"
-if grep -q "Commands:" < <("$SCRIPT" --help); then
-    echo "  - SUCCESS: Help contains 'Commands:'"
+printf "Test 1: Help output\n"
+if grep -q "Commands:" < <("${SCRIPT}" --help); then
+    printf "  - SUCCESS: Help contains 'Commands:'\n"
 else
-    echo "  - FAILURE: Help does not contain 'Commands:'"
+    printf "  - FAILURE: Help does not contain 'Commands:'\n"
     exit 1
 fi
 
 # 2. Test devices subcommand
-echo "Test 2: 'devices' subcommand"
-output=$("$SCRIPT" devices 2>&1 || true)
-if [[ "$output" == *"No devices connected"* ]] || [[ "$output" == *"Connected devices:"* ]] || [[ "$output" == *"adb is not installed"* ]] || [[ "$output" == *"Failed to connect to ADB server"* ]]; then
-    echo "  - SUCCESS: 'devices' subcommand recognized"
+printf "Test 2: 'devices' subcommand\n"
+output=$("${SCRIPT}" devices 2>&1 || true)
+if [[ "${output}" == *"No devices connected"* ]] || [[ "${output}" == *"Connected devices:"* ]] || [[ "${output}" == *"adb is not installed"* ]] || [[ "${output}" == *"Failed to connect to ADB server"* ]]; then
+    printf "  - SUCCESS: 'devices' subcommand recognized\n"
 else
-    echo "  - FAILURE: 'devices' subcommand not recognized (Result: $output)"
+    printf "  - FAILURE: 'devices' subcommand not recognized (Result: %s)\n" "${output}"
     exit 1
 fi
 
 # 3. Test backup subcommand (should fail if params are missing)
-echo "Test 3: 'backup' subcommand validation"
+printf "Test 3: 'backup' subcommand validation\n"
 # We expect this to fail with either a device error OR a validation error
 # But we specifically want to see if the command 'backup' is recognized
-output=$("$SCRIPT" backup --help 2>&1 || true)
-if [[ "$output" == *"Usage: "* ]]; then
-    echo "  - SUCCESS: 'backup' subcommand recognized help"
+output=$("${SCRIPT}" backup --help 2>&1 || true)
+if [[ "${output}" == *"Usage: "* ]]; then
+    printf "  - SUCCESS: 'backup' subcommand recognized help\n"
 else
-    echo "  - FAILURE: 'backup' subcommand not recognized"
+    printf "  - FAILURE: 'backup' subcommand not recognized\n"
     exit 1
 fi
 
 # 4. Test unknown command
-echo "Test 4: Unknown command"
-output=$("$SCRIPT" unknown_cmd 2>&1 || true)
-if [[ "$output" == *"Unknown command: unknown_cmd"* ]]; then
-    echo "  - SUCCESS: Correctly identified unknown command"
+printf "Test 4: Unknown command\n"
+output=$("${SCRIPT}" unknown_cmd 2>&1 || true)
+if [[ "${output}" == *"Unknown command: unknown_cmd"* ]]; then
+    printf "  - SUCCESS: Correctly identified unknown command\n"
 else
-    echo "  - FAILURE: Did not correctly identify unknown command"
+    printf "  - FAILURE: Did not correctly identify unknown command\n"
     exit 1
 fi
 
 # 5. Test archive flag recognition
-echo "Test 5: --archive flag recognition"
-output=$("$SCRIPT" backup --archive --help 2>&1 || true)
-if [[ "$output" == *"Usage: "* ]]; then
-    echo "  - SUCCESS: --archive flag recognized in backup command"
+printf "Test 5: --archive flag recognition\n"
+output=$("${SCRIPT}" backup --archive --help 2>&1 || true)
+if [[ "${output}" == *"Usage: "* ]]; then
+    printf "  - SUCCESS: --archive flag recognized in backup command\n"
 else
-    echo "  - FAILURE: --archive flag not recognized"
+    printf "  - FAILURE: --archive flag not recognized\n"
     exit 1
 fi
 
 # 6. Test password flag recognition
-echo "Test 6: --password flag recognition"
-output=$("$SCRIPT" backup --password "testpass" --help 2>&1 || true)
-if [[ "$output" == *"Usage: "* ]]; then
-    echo "  - SUCCESS: --password flag recognized in backup command"
+printf "Test 6: --password flag recognition\n"
+output=$("${SCRIPT}" backup --password "testpass" --help 2>&1 || true)
+if [[ "${output}" == *"Usage: "* ]]; then
+    printf "  - SUCCESS: --password flag recognized in backup command\n"
 else
-    echo "  - FAILURE: --password flag not recognized"
+    printf "  - FAILURE: --password flag not recognized\n"
     exit 1
 fi
 
-echo "All tests passed!"
+printf "All tests passed!\n"
