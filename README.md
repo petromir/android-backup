@@ -192,6 +192,31 @@ Examples:
   android-backup.sh backup --folders "/sdcard/DCIM,/sdcard/Download" --output ./backup --archive
 ```
 
+## Development & Contributing
+
+Contributions are more than welcome! Please follow the guidelines in [CONTRIBUTING.md](CONTRIBUTING.md)
+
+### The `finish` function
+
+Every script declares a `finish` function paired with a `trap`:
+
+```bash
+finish() {
+    local result=${?}
+    # Cleanup code goes here (e.g. rm -f "${tmpfile}")
+    exit ${result}
+}
+trap finish EXIT ERR
+```
+
+This pattern ensures that:
+1. **Cleanup runs on any exit path** — whether the script succeeds, fails, or is interrupted.
+2. **The original exit code is preserved** — `local result=${?}` captures the exit status *before* any cleanup commands execute, so the script returns the same code it would have returned without the trap.
+
+Currently, the `finish` function is a no-op placeholder; it exists so that future cleanup (temporary files, 
+unmounting a drive, kill a backgroud process, restore terminal settings, etc.) can be added in one central location 
+without risk of leaking resources or masking failure codes.
+
 ## License
 
 [MIT](LICENSE)
