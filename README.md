@@ -162,6 +162,33 @@ Uploading ./backup_2026-02-18_130044.zip to Google Drive folder ID: 1BxiMVs0XRA5
 Upload completed successfully.
 ```
 
+### Chained backup and upload
+
+You can chain `android-backup.sh` and `export-gdrive.sh` into a single command to back up, archive, and upload in one go.
+
+**Basic one-liner (uses the most recent zip in the directory):**
+
+```bash
+./android-backup.sh backup --folders "/sdcard/DCIM" --output ./backup --archive && \
+  ./export-gdrive.sh "$(ls -t ./backup_*.zip | head -n 1)" "YOUR_FOLDER_ID"
+```
+
+**With password protection:**
+
+```bash
+./android-backup.sh backup --folders "/sdcard/DCIM" --output ./backup --archive --password && \
+  ./export-gdrive.sh "$(ls -t ./backup_*.zip | head -n 1)" "YOUR_FOLDER_ID"
+```
+
+**How it works:**
+
+1. `android-backup.sh` creates a timestamped archive (e.g. `./backup_2026-02-18_130044.zip`).
+2. `ls -t ./backup_*.zip | head -n 1` picks the newest zip file in the current directory.
+3. `export-gdrive.sh` uploads that file to the specified Google Drive folder.
+4. `&&` ensures the upload only runs if the backup succeeds.
+
+> **Tip:** Run this from a dedicated backup directory (or use `--output /path/to/backups`) so `ls -t` only sees your latest backup.
+
 ### Show help
 
 ```bash
