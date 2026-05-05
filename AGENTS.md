@@ -34,6 +34,7 @@ The utility uses a subcommand-based interface:
 | `--dry-run` | Show what would be backed up without copying |
 | `--archive` | Enable zip archive creation |
 | `--password <pass>` | Password for the archive (requires `--archive`) |
+| `--quiet` | Suppress progress output; print only the final path (requires backup command) |
 | `--help, -h` | Show usage information |
 
 ## Google Drive Export Utility

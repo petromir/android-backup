@@ -26,6 +26,7 @@ DRY_RUN=false
 ENABLE_ARCHIVING=false
 ARCHIVING_PASSWORD=""
 PROMPT_PASSWORD=false
+QUIET=false
 
 # ------------------------------------------------------------------------------
 # Helper functions
@@ -33,6 +34,11 @@ PROMPT_PASSWORD=false
 
 print_error() {
     printf "Error: %s\n" "${1}" >&2
+}
+
+log_info() {
+    [[ "${QUIET}" == false ]] || return 0
+    printf '%s\n' "$*"
 }
 
 print_usage() {
@@ -49,6 +55,7 @@ Backup Options:
   --dry-run                      Show what would be backed up without copying
   --archive                      Create a zip archive of the backup
   --password                     Prompt for archive password
+  --quiet                        Suppress progress output; print only the final path
 
 Global Options:
   --help, -h                     Display this help message
@@ -57,6 +64,7 @@ Examples:
   ${SCRIPT_NAME} devices
   ${SCRIPT_NAME} backup --folders "/sdcard/DCIM" --output ./backup --dry-run
   ${SCRIPT_NAME} backup --folders "/sdcard/DCIM,/sdcard/Download" --output ./backup --archive
+  ${SCRIPT_NAME} backup --folders "/sdcard/DCIM" --output ./backup --archive --quiet
 EOF
 }
 
@@ -176,6 +184,7 @@ backup_folders() {
     fi
 
     local output_dir="${OUTPUT_FOLDER}_${TIMESTAMP}"
+    local archive_name=""
 
     # Convert comma-separated list to array
     IFS=',' read -ra folders <<< "${BACKUP_FOLDERS}"
@@ -203,8 +212,8 @@ backup_folders() {
         exit 1
     fi
 
-    printf "Starting backup to: %s\n" "${output_dir}"
-    printf "\n"
+    log_info "Starting backup to: ${output_dir}"
+    log_info ""
 
     local total_folders=${#folders[@]}
     local current=0
@@ -214,7 +223,7 @@ backup_folders() {
         folder=$(printf '%s' "${folder}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
         current=$((current + 1))
 
-        printf "[%s/%s] Copying %s...\n" "${current}" "${total_folders}" "${folder}"
+        log_info "[${current}/${total_folders}] Copying ${folder}..."
 
         # Get the folder name for local path
         local folder_name
@@ -222,14 +231,21 @@ backup_folders() {
         local local_path="${output_dir}/${folder_name}"
 
         # Pull folder from device
-        if ! adb pull "${folder}" "${local_path}" 2>&1 | tail --lines=1; then
-            print_error "Failed to copy: ${folder}"
-            continue
+        if [[ "${QUIET}" == true ]]; then
+            if ! adb pull "${folder}" "${local_path}" 1>&2; then
+                print_error "Failed to copy: ${folder}"
+                continue
+            fi
+        else
+            if ! adb pull "${folder}" "${local_path}" 2>&1 | tail --lines=1; then
+                print_error "Failed to copy: ${folder}"
+                continue
+            fi
         fi
     done
 
-    printf "\n"
-    printf "Backup completed: %s\n" "${output_dir}"
+    log_info ""
+    log_info "Backup completed: ${output_dir}"
 
     if [[ "${ENABLE_ARCHIVING}" == true ]]; then
         if ! command -v zip &>/dev/null; then
@@ -237,8 +253,8 @@ backup_folders() {
             return 0
         fi
 
-        local archive_name="${output_dir}.zip"
-        printf "Creating archive: %s...\n" "${archive_name}"
+        archive_name="${output_dir}.zip"
+        log_info "Creating archive: ${archive_name}..."
 
         # Change to the parent directory of output_dir to have cleaner paths in zip
         local parent_dir
@@ -249,18 +265,25 @@ backup_folders() {
         local zip_cmd=("zip" "-r")
         if [[ -n "${ARCHIVING_PASSWORD}" ]]; then
             zip_cmd+=("-P" "${ARCHIVING_PASSWORD}")
-            printf "Using password protection for archive.\n"
+            log_info "Using password protection for archive."
         fi
         zip_cmd+=("${base_dir}.zip" "${base_dir}")
 
         if (cd "${parent_dir}" && "${zip_cmd[@]}" > /dev/null); then
-            printf "Archive created successfully.\n"
+            log_info "Archive created successfully."
             # Optionally remove the uncompressed folder
             rm -rf "${output_dir}"
-            printf "Uncompressed backup folder removed.\n"
+            log_info "Uncompressed backup folder removed."
         else
             print_error "Failed to create archive."
         fi
+    fi
+
+    # Print final artifact path to stdout (always, for piping)
+    if [[ -n "${archive_name}" ]]; then
+        printf '%s\n' "${archive_name}"
+    else
+        printf '%s\n' "${output_dir}"
     fi
 }
 
@@ -340,6 +363,10 @@ main() {
                         PROMPT_PASSWORD=true
                         shift
                         ;;
+                    --quiet)
+                        QUIET=true
+                        shift
+                        ;;
                     --help|-h)
                         print_usage
                         exit 0
@@ -351,6 +378,10 @@ main() {
                         ;;
                 esac
             done
+            if [[ "${QUIET}" == true && "${DRY_RUN}" == true ]]; then
+                print_error "--quiet cannot be used with --dry-run."
+                exit 1
+            fi
             backup_folders
             ;;
         --help|-h|help)

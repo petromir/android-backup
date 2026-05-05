@@ -22,10 +22,11 @@ print_error() {
 
 print_usage() {
     cat <<EOF
-Usage: ${SCRIPT_NAME} <zip_file> <gdrive_folder_id>
+Usage: ${SCRIPT_NAME} <zip_file|- > <gdrive_folder_id>
 
 Arguments:
-  zip_file          Path to the local ZIP file to upload
+  zip_file          Path to the local ZIP file to upload, or - to read the
+                    path from standard input (useful for piping)
   gdrive_folder_id  The destination Google Drive folder ID
 
 Prerequisites:
@@ -43,6 +44,10 @@ Prerequisites:
   Find a folder ID:
     Open the target folder in Google Drive web UI.
     The URL will look like: https://drive.google.com/drive/folders/FOLDER_ID
+
+Examples:
+  ${SCRIPT_NAME} ./backup_2026-02-18_130044.zip "YOUR_FOLDER_ID"
+  echo "./backup_2026-02-18_130044.zip" | ${SCRIPT_NAME} - "YOUR_FOLDER_ID"
 EOF
 }
 
@@ -53,6 +58,14 @@ fi
 
 ZIP_FILE="${1}"
 GDRIVE_FOLDER="${2}"
+
+# Support reading the file path from stdin when - is given
+if [[ "${ZIP_FILE}" == "-" ]]; then
+    if ! read -r ZIP_FILE; then
+        print_error "No file path received on standard input."
+        exit 1
+    fi
+fi
 
 if [[ ! -f "${ZIP_FILE}" ]]; then
     print_error "ZIP file not found: ${ZIP_FILE}"
